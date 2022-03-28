@@ -2,7 +2,7 @@
     "rest": {
         "address": ":10030",
         "sendopen": false,
-        "sendclick": true
+        "sendclick": false
     },
     "email": {
         "smtpfrom": "pcarriersonline@yahoo.com",
