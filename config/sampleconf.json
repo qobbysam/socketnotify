@@ -1,0 +1,14 @@
+{
+    "rest": {
+        "address": ":10030",
+        "sendopen": false,
+        "sendclick": true
+    },
+    "email": {
+        "smtpfrom": "",
+        "smtpPassword": "",
+        "smtpHost": "",
+        "smtpPort" : "",
+        "notify": []
+    }
+}

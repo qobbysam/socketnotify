@@ -1,0 +1,14 @@
+{
+    "rest": {
+        "address": ":10030",
+        "sendopen": false,
+        "sendclick": true
+    },
+    "email": {
+        "smtpfrom": "pcarriersonline@yahoo.com",
+        "smtpPassword": "jozlqrqxzzajtckj",
+        "smtpHost": "smtp.mail.yahoo.com",
+        "smtpPort" : "587",
+        "notify": ["koby@pcarriers.com", "brett@pcarriers.com", "pcarriersonline@yahoo.com"]
+    }
+}

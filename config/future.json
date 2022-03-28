@@ -1,0 +1,14 @@
+{
+    "authkey": "",
+    "rest": {},
+    "services" : {
+        "socketlabs" : {
+            "url" : "",
+            "method" : "post",
+            "options" : {
+                "Type" : ["click", "open"]
+
+            }
+        }
+    }
+}
