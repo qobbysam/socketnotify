@@ -49,7 +49,7 @@ func (st *State) StartWatching(wg sync.WaitGroup, errchan chan error) {
 		// 	return
 		// }
 
-		if st.CheckToReport() && !st.CanTickOn() {
+		if st.CheckToReport() && st.CanTickOn() {
 
 			st.LockUpdate()
 
