@@ -1,6 +1,9 @@
 package app
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
 
 type EngageMentNotificationPostRequest struct {
 	Type         string `json:"Type"`
@@ -20,6 +23,24 @@ func (e *EngageMentNotificationPostRequest) Bind(r *http.Request) error {
 
 	return nil
 
+}
+
+type TurnRequest struct {
+	Action string `json:"action"`
+	Auth   string `json:"auth"`
+}
+
+func (e *TurnRequest) Bind(r *http.Request) error {
+
+	if e.Auth == "" {
+
+		return errors.New("auth cannot be empty")
+	}
+
+	if e.Action == "" {
+		return errors.New("action cannot be empty")
+	}
+	return nil
 }
 
 type ValRequest struct {

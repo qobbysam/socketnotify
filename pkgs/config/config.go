@@ -22,6 +22,8 @@ type EmailConfig struct {
 	SmtpHost     string   `json:"smtpHost"`
 	SmtpPort     string   `json:"smtpPort"`
 	Notify       []string `json:"notify"`
+	CanSend      bool     `json:"cansend"`
+	AuthKey      string   `json:"authkey"`
 }
 
 type PhoneConfig struct{}

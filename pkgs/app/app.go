@@ -51,6 +51,8 @@ func (ema *EmailNotifyApp) Init() error {
 	rou.Post("/val", ema.ValHandler)
 	rou.Post("/sendtest", ema.SendTestHandler)
 
+	rou.Post("/turnsend", ema.TurnSendHandler)
+
 	ema.Router = rou
 
 	return nil
@@ -124,6 +126,68 @@ func (ema *EmailNotifyApp) HandleReceiveData(data EngageMentNotificationPostRequ
 	// 	return
 
 	// }
+}
+
+func (ema *EmailNotifyApp) TurnSendHandler(rw http.ResponseWriter, r *http.Request) {
+
+	data := &TurnRequest{}
+
+	if err := render.Bind(r, data); err != nil {
+
+		ema.WriteError(rw, r)
+		return
+
+	}
+
+	if data.Action == "1" {
+
+		ema.NotifyEx.LockCanSend()
+
+		ema.WriteSuccess(rw, r)
+		return
+	} else if data.Action == "0" {
+		ema.NotifyEx.UnlockCanSend()
+		ema.WriteSuccess(rw, r)
+		return
+	} else {
+		ema.WriteError(rw, r)
+		return
+	}
+
+}
+
+func (ema *EmailNotifyApp) WriteSuccess(rw http.ResponseWriter, r *http.Request) {
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", "application/json")
+
+	resp := make(map[string]string)
+
+	resp["message"] = "Status OK"
+
+	jsonResp, err := json.Marshal(resp)
+
+	if err != nil {
+		log.Println("Error happend in json marshal ", err)
+	}
+
+	rw.Write(jsonResp)
+}
+
+func (ema *EmailNotifyApp) WriteError(rw http.ResponseWriter, r *http.Request) {
+	rw.WriteHeader(http.StatusUnauthorized)
+	rw.Header().Set("Content-Type", "application/json")
+
+	resp := make(map[string]string)
+
+	resp["message"] = "Status Unauthorized"
+
+	jsonResp, err := json.Marshal(resp)
+
+	if err != nil {
+		log.Println("Error happend in json marshal ", err)
+	}
+
+	rw.Write(jsonResp)
 }
 
 func (ema *EmailNotifyApp) ReceiveHandler(rw http.ResponseWriter, r *http.Request) {

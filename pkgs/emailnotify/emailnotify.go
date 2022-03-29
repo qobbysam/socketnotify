@@ -3,10 +3,12 @@ package emailnotify
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/qobbysam/socketnotify/pkgs/config"
+	"github.com/qobbysam/socketnotify/pkgs/locdb"
 	gomail "gopkg.in/mail.v2"
 )
 
@@ -15,11 +17,15 @@ type SmtpAuth struct {
 	Password string
 	Host     string
 	Port     string
+	//CanSend  bool
 }
 
 type EmailNotifyExecutor struct {
 	SmtpAuth *SmtpAuth
 	Notify   []string
+	CanSend  bool
+	DB       *locdb.DBS
+	AuthKey  string
 }
 
 type Message struct {
@@ -41,6 +47,8 @@ func NewEmailNotifyExecutor(cfg *config.EmailConfig) *EmailNotifyExecutor {
 
 	out.Notify = cfg.Notify
 	out.SmtpAuth = &smtpauth
+	out.CanSend = cfg.CanSend
+	out.AuthKey = cfg.AuthKey
 
 	return &out
 
@@ -55,32 +63,41 @@ func (em *EmailNotifyExecutor) TestExecutorServer() error {
 	return err
 }
 
+func (em *EmailNotifyExecutor) CanSendOn() bool {
+
+	if em.CanSend {
+		log.Println("Can send is on")
+		//return em.CanSend
+	} else {
+		log.Println("Can send if off")
+
+	}
+
+	return em.CanSend
+
+}
+
+func (em *EmailNotifyExecutor) LockCanSend() {
+
+	em.CanSend = false
+
+	log.Println("locking can send")
+}
+
+func (em *EmailNotifyExecutor) UnlockCanSend() {
+	em.CanSend = true
+	log.Println("unlocking can send")
+}
+
 func (em *EmailNotifyExecutor) SendOneMessage(msg Message) error {
-	// Sender data.
-	// from := em.SmtpAuth.From
-	// password := em.SmtpAuth.Password
 
-	// // Receiver email address.
-	// to := em.Notify
+	if !em.CanSendOn() {
+		log.Println("call was success but we can't send yet")
 
-	// // smtp server configuration.
-	// smtpHost := em.SmtpAuth.Host
-	// smtpPort := em.SmtpAuth.Password
+		return nil
 
-	// // Message.
-	// //message := []byte("This is a test email message.")
+	}
 
-	// message := msg
-	// // Authentication.
-	// auth := smtp.PlainAuth("", from, password, smtpHost)
-
-	// // Sending email.
-	// err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, message)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return err
-	// }
-	// fmt.Println("Email Sent Successfully!")
 	m := gomail.NewMessage()
 
 	// Set E-Mail sender

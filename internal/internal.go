@@ -123,6 +123,8 @@ func (in *InternalStruct) StartApplication(action, input, resourcename string) {
 	case "saveresource":
 		in.SaveResource(resourcename)
 
+	//case "turnoff"
+
 	default:
 		fmt.Println("not a valid action received")
 	}
