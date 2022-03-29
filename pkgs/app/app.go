@@ -53,6 +53,8 @@ func (ema *EmailNotifyApp) Init() error {
 
 	rou.Post("/turnsend", ema.TurnSendHandler)
 
+	rou.Post("/turntick", ema.TurnTickHandler)
+
 	ema.Router = rou
 
 	return nil
@@ -128,6 +130,33 @@ func (ema *EmailNotifyApp) HandleReceiveData(data EngageMentNotificationPostRequ
 	// }
 }
 
+func (ema *EmailNotifyApp) TurnTickHandler(rw http.ResponseWriter, r *http.Request) {
+
+	data := &TurnRequest{}
+
+	if err := render.Bind(r, data); err != nil {
+
+		ema.WriteError(rw, r)
+		return
+
+	}
+
+	if data.Action == "1" {
+
+		ema.State.LockCanTick()
+
+		ema.WriteSuccess(rw, r)
+		return
+	} else if data.Action == "0" {
+		ema.State.UnlockCanTick()
+		ema.WriteSuccess(rw, r)
+		return
+	} else {
+		ema.WriteError(rw, r)
+		return
+	}
+
+}
 func (ema *EmailNotifyApp) TurnSendHandler(rw http.ResponseWriter, r *http.Request) {
 
 	data := &TurnRequest{}

@@ -11,6 +11,7 @@ import (
 )
 
 type State struct {
+	CanTick           bool
 	CanUpdate         bool
 	NewMsgReceived    bool
 	LastMsgReportTime time.Time
@@ -30,6 +31,7 @@ func NewState(cfg *config.BigConfig, db *locdb.DBS, not *emailnotify.EmailNotify
 		DB:                db,
 		Bufferwait:        make([]locdb.NotificationRequest, 0),
 		EmailNotify:       not,
+		CanTick:           cfg.Cron.CanTick,
 	}
 }
 
@@ -41,7 +43,13 @@ func (st *State) StartWatching(wg sync.WaitGroup, errchan chan error) {
 	fmt.Println("ticker started")
 	for t := range ticker.C {
 		fmt.Println("ticker run")
-		if st.CheckToReport() {
+
+		// if !st.CanTickOn() {
+
+		// 	return
+		// }
+
+		if st.CheckToReport() && !st.CanTickOn() {
 
 			st.LockUpdate()
 

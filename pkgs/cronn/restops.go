@@ -8,6 +8,26 @@ import (
 	"github.com/qobbysam/socketnotify/pkgs/locdb"
 )
 
+func (s *State) CanTickOn() bool {
+	if s.CanTick {
+		log.Println("can tick is on")
+	} else {
+		log.Println("can tick is off")
+	}
+	return s.CanTick
+}
+
+func (s *State) LockCanTick() {
+	s.CanTick = false
+
+	log.Println("locking can tick")
+}
+
+func (s *State) UnlockCanTick() {
+	s.CanTick = true
+
+	log.Println("unlocking can tick")
+}
 func (s *State) LockUpdate() {
 
 	s.CanUpdate = false

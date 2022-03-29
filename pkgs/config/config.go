@@ -35,5 +35,6 @@ type DBConfig struct {
 }
 
 type CronConfig struct {
-	SecondInterval int `json:"secint"`
+	SecondInterval int  `json:"secint"`
+	CanTick        bool `json:"cantick"`
 }
