@@ -9,6 +9,7 @@ import (
 
 	"github.com/qobbysam/socketnotify/pkgs/app"
 	"github.com/qobbysam/socketnotify/pkgs/config"
+	"github.com/qobbysam/socketnotify/pkgs/locdb"
 )
 
 type InternalStruct struct {
@@ -41,7 +42,11 @@ func (in *InternalStruct) Init(input string) error {
 		return err
 	}
 
-	app := app.NewEmailNotifyApp(cfg)
+	db, err := locdb.NewDBS(cfg)
+	if err != nil {
+		return err
+	}
+	app := app.NewEmailNotifyApp(cfg, db)
 
 	in.App = app
 
@@ -97,7 +102,7 @@ func (in *InternalStruct) BuildConfig(path string) (*config.BigConfig, error) {
 	return &bigConfig, nil
 }
 
-func (in *InternalStruct) StartApplication(action, input string) {
+func (in *InternalStruct) StartApplication(action, input, resourcename string) {
 
 	err := in.Init(input)
 
@@ -114,8 +119,24 @@ func (in *InternalStruct) StartApplication(action, input string) {
 		in.StartServer()
 	case "emailtest":
 		in.EmailTest()
+
+	case "saveresource":
+		in.SaveResource(resourcename)
+
 	default:
 		fmt.Println("not a valid action received")
+	}
+
+}
+
+func (in *InternalStruct) SaveResource(name string) {
+
+	err := in.App.DB.SaveReSourceID(name)
+
+	if err != nil {
+		fmt.Println("failed to save ")
+	} else {
+		fmt.Println("save sucess")
 	}
 
 }

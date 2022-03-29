@@ -1,15 +1,18 @@
 package app
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/qobbysam/socketnotify/pkgs/config"
+	"github.com/qobbysam/socketnotify/pkgs/cronn"
 	"github.com/qobbysam/socketnotify/pkgs/emailnotify"
+	"github.com/qobbysam/socketnotify/pkgs/locdb"
 )
 
 type EmailNotifyApp struct {
@@ -17,23 +20,30 @@ type EmailNotifyApp struct {
 	NotifyEx *emailnotify.EmailNotifyExecutor
 	Router   chi.Router
 	Addr     string
+	DB       *locdb.DBS
+	State    cronn.State
 }
 
-func NewEmailNotifyApp(cfg *config.BigConfig) *EmailNotifyApp {
+func NewEmailNotifyApp(cfg *config.BigConfig, db *locdb.DBS) *EmailNotifyApp {
 
 	//restserver := server.NewRestServer(cfg.Rest)
 
 	notifyapp := emailnotify.NewEmailNotifyExecutor(&cfg.Email)
 
+	state := cronn.NewState(cfg, db, notifyapp)
 	out := EmailNotifyApp{
 		//RestServer: restserver,
 		NotifyEx: notifyapp,
 		Addr:     cfg.Rest.Address,
+		DB:       db,
+		State:    *state,
 	}
 	return &out
 }
 
 func (ema *EmailNotifyApp) Init() error {
+
+	ema.DB.RunMigrations()
 
 	rou := chi.NewRouter()
 
@@ -46,47 +56,125 @@ func (ema *EmailNotifyApp) Init() error {
 	return nil
 }
 
+func (ema *EmailNotifyApp) RequestToDB(data EngageMentNotificationPostRequest, origin string) locdb.NotificationRequest {
+
+	dbs := locdb.NewRestNotificationRequest(origin)
+
+	dbs.Address = data.Address
+	dbs.ClientIp = data.ClientIp
+	dbs.DateTime = data.DateTime
+	dbs.MailingId = data.MailingId
+	dbs.MessageId = data.MessageId
+	//dbs.Origin = origin
+	dbs.SecretKey = data.SecretKey
+	dbs.ServerId = data.ServerId
+	dbs.TrackingType = data.TrackingType
+	dbs.Type = data.Type
+	dbs.Url = data.Url
+	dbs.UserAgent = data.UserAgent
+
+	return *dbs
+}
+
+func (ema *EmailNotifyApp) HandleReceiveData(data EngageMentNotificationPostRequest) {
+
+	data_to_save := ema.RequestToDB(data, "socketlab")
+
+	if ema.State.CanSave() {
+		err := ema.DB.SaveRequest(data_to_save)
+
+		if err != nil {
+			fmt.Println("failed to save data")
+			fmt.Println(err)
+		}
+
+		log.Println("save success full")
+
+		ema.State.UnlockNewMsg()
+
+	} else {
+
+		ema.State.AddToBuffer(data_to_save)
+	}
+
+	//return nil
+
+	// switch data.TrackingType {
+	// case "0":
+	// 	//click event
+	// 	err := ema.HandleClick(*data)
+
+	// 	// if err != nil {
+	// 	// 	render.Render(rw, r, ErrInvalidRequest(err))
+	// 	// 	return
+	// 	// }
+
+	// case "1":
+	// 	//open event
+
+	// 	msg := ema.NotifyEx.BuildOpenMsg(data.Address)
+
+	// 	err := ema.NotifyEx.SendOneMessage(*msg)
+
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	return
+	// default:
+	// 	return
+
+	// }
+}
+
 func (ema *EmailNotifyApp) ReceiveHandler(rw http.ResponseWriter, r *http.Request) {
 	data := &EngageMentNotificationPostRequest{}
 
 	if err := render.Bind(r, data); err != nil {
-		render.Render(rw, r, ErrInvalidRequest(err))
+		//render.Render(rw, r, ErrInvalidRequest(err))
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Header().Set("Content-Type", "application/json")
+
+		resp := make(map[string]string)
+
+		resp["message"] = "Status Unauthorized"
+
+		jsonResp, err := json.Marshal(resp)
+
+		if err != nil {
+			log.Println("Error happend in json marshal ", err)
+		}
+
+		rw.Write(jsonResp)
+
 		return
 	}
 
 	log.Println(data)
 
-	switch data.Type {
-	case "Click":
-		err := ema.HandleClick(*data)
+	ema.HandleReceiveData(*data)
 
-		if err != nil {
-			render.Render(rw, r, ErrInvalidRequest(err))
-			return
-		}
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", "application/json")
 
-		render.Status(r, http.StatusOK)
-		return
-	case "Open":
-		msg := ema.NotifyEx.BuildOpenMsg(data.Address)
+	resp := make(map[string]string)
 
-		err := ema.NotifyEx.SendOneMessage(*msg)
+	resp["message"] = "Status OK"
 
-		if err != nil {
-			render.Render(rw, r, ErrInvalidRequest(err))
-			return
-		}
-		render.Status(r, http.StatusOK)
-		return
-	default:
-		render.Render(rw, r, ErrInvalidRequest(errors.New("Not open or click")))
-		return
+	jsonResp, err := json.Marshal(resp)
 
+	if err != nil {
+		log.Println("Error happend in json marshal ", err)
 	}
+
+	rw.Write(jsonResp)
+
+	return
+
+	//render.Status(rw, http.StatusOK)
 
 }
 func (ema *EmailNotifyApp) ValHandler(rw http.ResponseWriter, r *http.Request) {
-	data := &ValRequest{}
+	data := &EngageMentNotificationPostRequest{}
 
 	if err := render.Bind(r, data); err != nil {
 		render.Render(rw, r, ErrInvalidRequest(err))
@@ -133,8 +221,42 @@ func (ema *EmailNotifyApp) StartApplicationServer() error {
 		fmt.Println("failed to init app server")
 	}
 	fmt.Println("starting http server on , ", ema.Addr)
+	errchan := make(chan error, 1)
+	donechan := make(chan struct{}, 1)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go ema.State.StartWatching(wg, errchan)
+
+	wg.Add(1)
+	go ema.WatchChannel(errchan, donechan)
+
+	if err != nil {
+
+		fmt.Println("failed to start watching server")
+	}
+
+	fmt.Println("hitting http listen and serve")
 	err = http.ListenAndServe(ema.Addr, ema.Router)
+	wg.Wait()
 	return err
+}
+
+func (ema *EmailNotifyApp) WatchChannel(errchan chan error, donechan chan struct{}) {
+	fmt.Println("starting app watch chanel")
+	for {
+		select {
+		case <-donechan:
+			fmt.Println("shutting down now")
+		case err := <-errchan:
+
+			if err != nil {
+				fmt.Println("error happend while starting")
+
+				fmt.Println(err)
+
+			}
+		}
+	}
 }
 
 func (ema *EmailNotifyApp) HandleClick(data EngageMentNotificationPostRequest) error {

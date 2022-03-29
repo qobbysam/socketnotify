@@ -3,17 +3,17 @@ package app
 import "net/http"
 
 type EngageMentNotificationPostRequest struct {
-	Type string
-	//	Address   string
-	DateTime  string
-	MailingId string
-	MessageId string
-	Address   string
-	ServerId  string
-	SecretKey string
-	Response  string
-	LocalIP   string
-	RemoteMta string
+	Type         string `json:"Type"`
+	DateTime     string `json:"DateTime"`
+	MailingId    string `json:"MailingId"`
+	MessageId    string `json:"MessageId"`
+	Address      string `json:"Address"`
+	ServerId     int    `json:"ServerId"`
+	SecretKey    string `json:"SecretKey"`
+	ClientIp     string `json:"ClientIp"`
+	TrackingType string `json:"TrackingType"`
+	Url          string `json:"Url"`
+	UserAgent    string `json:"UserAgent"`
 }
 
 func (e *EngageMentNotificationPostRequest) Bind(r *http.Request) error {

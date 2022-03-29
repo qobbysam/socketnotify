@@ -14,9 +14,10 @@ func main() {
 
 	path_to_config := flag.String("p", "", "path to config file")
 
+	resourcename := flag.String("rn", "", "nameof resource")
 	flag.Parse()
 
 	app := internal.InternalStruct{}
 
-	app.StartApplication(*start, *path_to_config)
+	app.StartApplication(*start, *path_to_config, *resourcename)
 }

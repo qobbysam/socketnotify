@@ -6,6 +6,8 @@ type BigConfig struct {
 	Rest  RestConfig  `json:"rest"`
 	Email EmailConfig `json:"email"`
 	Phone PhoneConfig `json:"phone"`
+	DB    DBConfig    `json:"dbconf"`
+	Cron  CronConfig  `json:"cronconf"`
 }
 
 type RestConfig struct {
@@ -25,3 +27,11 @@ type EmailConfig struct {
 type PhoneConfig struct{}
 
 type NotificationsConfig struct{}
+
+type DBConfig struct {
+	Name string `json:"name"`
+}
+
+type CronConfig struct {
+	SecondInterval int `json:"secint"`
+}
