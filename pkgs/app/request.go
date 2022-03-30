@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"net/http"
+	"strings"
 )
 
 type EngageMentNotificationPostRequest struct {
@@ -20,6 +21,8 @@ type EngageMentNotificationPostRequest struct {
 }
 
 func (e *EngageMentNotificationPostRequest) Bind(r *http.Request) error {
+
+	e.Address = strings.ToUpper(e.Address)
 
 	return nil
 

@@ -203,7 +203,7 @@ func (st *State) BuildSpecialReport(in []locdb.NotificationRequest, action strin
 	for k, v := range in {
 
 		top := fmt.Sprint("number :  ", k, "mailingid ", v.MailingId, "\n")
-		middle := fmt.Sprint("email : ", action, "  on "+"\n")
+		middle := fmt.Sprint("email : ", v.Address, "  on "+"\n")
 
 		outreport.Txt = outreport.Txt + top + middle
 	}
@@ -274,7 +274,7 @@ func (st *State) ClientResourceToReport(sub string, reslist []locdb.ClientResour
 
 	for k, v := range reslist {
 
-		middle := fmt.Sprint(v, " ", v)
+		middle := fmt.Sprint("\n ", v)
 		top := fmt.Sprint("Number: ", k)
 		report.Txt = report.Txt + "\n" + top + "\n" + middle + "\n"
 

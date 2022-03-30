@@ -3,6 +3,7 @@ package locdb
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -27,8 +28,8 @@ func (db *DBS) GetEmails(nots []NotificationRequest) []string {
 	out := make([]string, 0)
 
 	for _, v := range nots {
-
-		out = append(out, v.Address)
+		upper := strings.ToUpper(v.Address)
+		out = append(out, upper)
 	}
 
 	return out

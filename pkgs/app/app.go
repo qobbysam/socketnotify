@@ -173,38 +173,82 @@ func (ema *EmailNotifyApp) GenSpecHandler(rw http.ResponseWriter, r *http.Reques
 	now := time.Now()
 	starttime := ema.GetDiff(data.Last)
 	// /notsclick := ema.DB.GetAllClick(starttime, now, data.MailingId)
-	notsopen := ema.DB.GetAllOpen(starttime, now, data.MailingId)
+	//notsopen := ema.DB.GetAllOpen(starttime, now, data.MailingId)
 	//open action
 	if data.Action == "0" {
 
-		//resource_ids :=
-		//esourcelist := make([])
+		notsopen := ema.DB.GetAllClick(starttime, now, data.MailingId)
+
+		log.Println("all request size  ", len(notsopen))
 
 		report := ema.State.BuildSpecialReport(notsopen, "open")
-
 		msg := emailnotify.Message{
 			Subject: report.Subject,
 			Msg:     report.Txt,
 		}
-		err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
 
+		log.Println("MSg to send")
+		fmt.Println(msg)
+		err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
 		if err != nil {
 			log.Println("cannot send gen msg")
 		}
-
 		if data.GenResource {
-			email := ema.DB.GetEmails(notsopen)
+			emails := ema.DB.GetEmails(notsopen)
 
-			report := ema.State.BuildResourceReport(email, "open")
+			log.Println(emails)
+
+			report := ema.State.BuildResourceReport(emails, data.Action)
 			msg := emailnotify.Message{
 				Subject: report.Subject,
 				Msg:     report.Txt,
 			}
+
+			log.Println("Resource MSG to send")
+			fmt.Println(msg)
 			err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
 			if err != nil {
 				log.Println("cannot send gen msg")
 			}
 		}
+		//
+		// //		err := ema.NotifyEx.SendGenMsg(report)
+
+		// 		if err != nil {
+		// 			log.Println("failed to send msg")
+		// 			log.Println(err)
+		// 		}
+
+		ema.WriteSuccess(rw, r)
+
+		//resource_ids :=
+		//esourcelist := make([])
+
+		// report := ema.State.BuildSpecialReport(notsopen, "open")
+
+		// msg := emailnotify.Message{
+		// 	Subject: report.Subject,
+		// 	Msg:     report.Txt,
+		// }
+		// err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
+
+		// if err != nil {
+		// 	log.Println("cannot send gen msg")
+		// }
+
+		// if data.GenResource {
+		// 	email := ema.DB.GetEmails(notsopen)
+
+		// 	report := ema.State.BuildResourceReport(email, "open")
+		// 	msg := emailnotify.Message{
+		// 		Subject: report.Subject,
+		// 		Msg:     report.Txt,
+		// 	}
+		// 	err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
+		// 	if err != nil {
+		// 		log.Println("cannot send gen msg")
+		// 	}
+		// }
 		//	err := ema.NotifyEx.SendGenMsg(report)
 
 		// if err != nil {
@@ -213,11 +257,16 @@ func (ema *EmailNotifyApp) GenSpecHandler(rw http.ResponseWriter, r *http.Reques
 	} else if data.Action == "1" {
 		notsopen := ema.DB.GetAllOpen(starttime, now, data.MailingId)
 
+		log.Println("all request size  ", len(notsopen))
+
 		report := ema.State.BuildSpecialReport(notsopen, "click")
 		msg := emailnotify.Message{
 			Subject: report.Subject,
 			Msg:     report.Txt,
 		}
+
+		log.Println("MSg to send")
+		fmt.Println(msg)
 		err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
 		if err != nil {
 			log.Println("cannot send gen msg")
@@ -225,16 +274,23 @@ func (ema *EmailNotifyApp) GenSpecHandler(rw http.ResponseWriter, r *http.Reques
 		if data.GenResource {
 			emails := ema.DB.GetEmails(notsopen)
 
+			log.Println(emails)
+
 			report := ema.State.BuildResourceReport(emails, data.Action)
 			msg := emailnotify.Message{
 				Subject: report.Subject,
 				Msg:     report.Txt,
 			}
+
+			log.Println("Resource MSG to send")
+			fmt.Println(msg)
 			err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
 			if err != nil {
 				log.Println("cannot send gen msg")
 			}
 		}
+
+		ema.WriteSuccess(rw, r)
 		//
 		// //		err := ema.NotifyEx.SendGenMsg(report)
 

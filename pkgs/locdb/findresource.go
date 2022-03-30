@@ -47,7 +47,7 @@ func (dbs *DBS) LoadResourceCsv(name string) ([]OutPut, error) {
 			} else {
 				rec.Name = line[0]
 				rec.Phone = line[1]
-				rec.Email = line[2]
+				rec.Email = strings.ToUpper(line[2])
 				rec.Mc = line[3]
 				rec.Dot = line[4]
 				rec.Street = line[5]
@@ -62,6 +62,7 @@ func (dbs *DBS) LoadResourceCsv(name string) ([]OutPut, error) {
 			}
 
 			out = append(out, rec)
+			fmt.Println(rec.Email)
 		}
 	}
 	log.Println("len of new output, ", len(out))
@@ -147,7 +148,7 @@ func (dbs *DBS) LoadResourceMain(name string) error {
 	for k, v := range new_from_csv {
 		foundinmap := false
 		ascn := ToAsciiTotal(v.Email)
-		fmt.Println(k)
+		//fmt.Println(k)
 
 		if notfoundprev {
 			not_found_list = append(not_found_list, new_from_csv[k-1])
@@ -165,6 +166,7 @@ func (dbs *DBS) LoadResourceMain(name string) error {
 
 				//not_found_list = append(not_found_list, v)
 				notfoundprev = true
+				foundinmap = false
 
 			} else {
 				//email already exists to not add to not found list
@@ -184,10 +186,23 @@ func (dbs *DBS) LoadResourceMain(name string) error {
 					}
 				}
 
-				if foundinmap {
-					notfoundprev = false
-				}
 			}
+
+			if !foundinmap {
+				notfoundprev = true
+			}
+
+			if k < len(new_from_csv) {
+				//notfoundprev = false
+				fmt.Println("k ", k)
+				fmt.Println("Email ", v.Email)
+				fmt.Println("notfound ", totalnotfound)
+				fmt.Println("found ", totalfound)
+				fmt.Println("foundinmap  ", foundinmap)
+				fmt.Println("notfoundprev ", notfoundprev)
+			}
+
+			continue
 
 		}
 
