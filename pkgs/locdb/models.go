@@ -51,17 +51,28 @@ func NewResourceId(name string) *ResourceID {
 }
 
 type ClientResource struct {
-	ID          string `gorm:"primaryKey"`
-	ResourceID  string
-	Email       string
+	ID string `gorm:"primaryKey"`
+	//ResourceID  string
+	Name   string
+	Phone  string
+	Email  string
+	Mc     string
+	Dot    string
+	Street string
+	City   string
+	State  string
+	//Address      string
+	DotApplyDate string
+	McAppyDate   string
+	McGrantDate  string
+	PowerUnit    string
+	DriverTotal  string
+	McsFileDate  string
+
 	FirstName   string
 	LastName    string
-	PhoneNumber string
-	DotNumber   string
-	McNumber    string
-	City        string
-	State       string
-	Address     string
+	CreatedTime time.Time
+	UpdatedTime time.Time
 }
 
 func NewClientResource() *ClientResource {

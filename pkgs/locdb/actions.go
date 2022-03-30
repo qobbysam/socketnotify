@@ -2,6 +2,7 @@ package locdb
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -21,6 +22,35 @@ func (db *DBS) SaveRequest(data NotificationRequest) error {
 
 }
 
+func (db *DBS) GetEmails(nots []NotificationRequest) []string {
+
+	out := make([]string, 0)
+
+	for _, v := range nots {
+
+		out = append(out, v.Address)
+	}
+
+	return out
+
+}
+
+func (db *DBS) GetOneResource(name string) *ResourceID {
+	res := ResourceID{}
+	err := db.DB.Where(&ResourceID{Name: name}).Find(&res)
+
+	if err.Error != nil {
+		return nil
+	} else if res.ID == "" {
+
+		return nil
+
+	}
+
+	return &res
+
+}
+
 func (db *DBS) GetAllResources() []ResourceID {
 
 	out := make([]ResourceID, 0)
@@ -30,20 +60,41 @@ func (db *DBS) GetAllResources() []ResourceID {
 	return out
 }
 
-func (db *DBS) SaveReSourceID(name string) error {
+func (db *DBS) SaveReSourceID(name string, alive bool) error {
 
-	res := NewResourceId(name)
+	knownname := ResourceID{}
 
-	err := db.DB.Create(&res)
+	get := db.DB.Where(&ResourceID{Name: name}).Find(&knownname)
 
-	if err.Error != nil {
-		fmt.Println("Failed to save resource id")
-		return err.Error
-
+	if get.Error != nil {
+		log.Println("failed to find resource name")
 	}
-	fmt.Println("Save resource id sucess")
 
-	return err.Error
+	if knownname.ID == "" {
+		res := NewResourceId(name)
+		res.Alive = alive
+		err := db.DB.Create(&res)
+
+		if err.Error != nil {
+			fmt.Println("Failed to save resource id")
+			return err.Error
+
+		}
+		fmt.Println("Save resource id sucess")
+	} else {
+
+		knownname.Alive = alive
+
+		up := db.DB.Save(&knownname)
+
+		if up.Error != nil {
+			log.Println("failed to update name")
+			return up.Error
+		}
+		log.Println("updated status of ,  ", name)
+	}
+
+	return nil
 
 }
 

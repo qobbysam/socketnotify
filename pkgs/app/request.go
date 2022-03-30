@@ -25,6 +25,28 @@ func (e *EngageMentNotificationPostRequest) Bind(r *http.Request) error {
 
 }
 
+type GenSpecRequest struct {
+	MailingId      string   `json:"mailingid"`
+	Action         string   `json:"action"`
+	Last           int      `json:"last"`
+	Auth           string   `json:"auth"`
+	NotifyInterest []string `json:"notify"`
+	GenResource    bool     `json:"genresource"`
+}
+
+func (e *GenSpecRequest) Bind(r *http.Request) error {
+
+	if e.Auth == "" {
+
+		return errors.New("auth cannot be empty")
+	}
+
+	if e.Action == "" {
+		return errors.New("action cannot be empty")
+	}
+	return nil
+}
+
 type TurnRequest struct {
 	Action string `json:"action"`
 	Auth   string `json:"auth"`

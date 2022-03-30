@@ -102,7 +102,7 @@ func (in *InternalStruct) BuildConfig(path string) (*config.BigConfig, error) {
 	return &bigConfig, nil
 }
 
-func (in *InternalStruct) StartApplication(action, input, resourcename string) {
+func (in *InternalStruct) StartApplication(action, input, resourcename string, alive bool) {
 
 	err := in.Init(input)
 
@@ -121,7 +121,10 @@ func (in *InternalStruct) StartApplication(action, input, resourcename string) {
 		in.EmailTest()
 
 	case "saveresource":
-		in.SaveResource(resourcename)
+		in.SaveResource(resourcename, alive)
+
+	case "cresource":
+		in.LoadResource(resourcename)
 
 	//case "turnoff"
 
@@ -131,9 +134,20 @@ func (in *InternalStruct) StartApplication(action, input, resourcename string) {
 
 }
 
-func (in *InternalStruct) SaveResource(name string) {
+func (in *InternalStruct) LoadResource(name string) {
 
-	err := in.App.DB.SaveReSourceID(name)
+	err := in.App.DB.LoadResourceMain(name)
+	if err != nil {
+		fmt.Println("failed to save cresource ")
+	} else {
+		fmt.Println("save client resource run successfully")
+	}
+
+}
+
+func (in *InternalStruct) SaveResource(name string, alive bool) {
+
+	err := in.App.DB.SaveReSourceID(name, alive)
 
 	if err != nil {
 		fmt.Println("failed to save ")

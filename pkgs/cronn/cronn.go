@@ -2,11 +2,20 @@ package cronn
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
 	"github.com/qobbysam/socketnotify/pkgs/config"
 	"github.com/qobbysam/socketnotify/pkgs/emailnotify"
+
+	//"github.com/qobbysam/socketnotify/pkgs/emailnotify"
+
+	//"github.com/qobbysam/socketnotify/pkgs/emailnotify"
+
+	//	"github.com/qobbysam/socketnotify/pkgs/emailnotify"
+
+	//"github.com/qobbysam/socketnotify/pkgs/emailnotify"
 	"github.com/qobbysam/socketnotify/pkgs/locdb"
 )
 
@@ -17,9 +26,9 @@ type State struct {
 	LastMsgReportTime time.Time
 	SecondInterval    int
 	DB                *locdb.DBS
-	EmailNotify       *emailnotify.EmailNotifyExecutor
-	Superwaitgroup    sync.WaitGroup
-	Bufferwait        []locdb.NotificationRequest
+	//	EmailNotify       *emailnotify.EmailNotifyExecutor
+	Superwaitgroup sync.WaitGroup
+	Bufferwait     []locdb.NotificationRequest
 }
 
 func NewState(cfg *config.BigConfig, db *locdb.DBS, not *emailnotify.EmailNotifyExecutor) *State {
@@ -30,8 +39,8 @@ func NewState(cfg *config.BigConfig, db *locdb.DBS, not *emailnotify.EmailNotify
 		SecondInterval:    cfg.Cron.SecondInterval,
 		DB:                db,
 		Bufferwait:        make([]locdb.NotificationRequest, 0),
-		EmailNotify:       not,
-		CanTick:           cfg.Cron.CanTick,
+		//	EmailNotify:       not,
+		CanTick: cfg.Cron.CanTick,
 	}
 }
 
@@ -175,16 +184,34 @@ func (st *State) NotifyInterests(msg Report) error {
 	msgg.Subject = msg.Subject
 	msgg.Msg = msg.Txt
 
-	err := st.EmailNotify.SendOneMessage(msgg)
+	//	err := st.EmailNotify.SendOneMessage(msgg)
 
-	if err != nil {
-		fmt.Println("failed to send msg")
-		return err
-	}
+	// if err != nil {
+	// 	fmt.Println("failed to send msg")
+	// 	return err
+	// }
 
 	fmt.Println("msg sending success")
 
 	return nil
+}
+
+func (st *State) BuildSpecialReport(in []locdb.NotificationRequest, action string) Report {
+
+	outreport := Report{}
+
+	for k, v := range in {
+
+		top := fmt.Sprint("number :  ", k, "mailingid ", v.MailingId, "\n")
+		middle := fmt.Sprint("email : ", action, "  on "+"\n")
+
+		outreport.Txt = outreport.Txt + top + middle
+	}
+
+	outreport.Subject = fmt.Sprint(action, " report ", len(in))
+
+	return outreport
+
 }
 
 func (st *State) BuildOpenReport(allresourceid []locdb.ResourceID) ([]Report, []Report) {
@@ -272,6 +299,32 @@ func (st *State) NotificationRequestsToReport(sub, action string, reqlist []locd
 	}
 	fmt.Println("printing report,  ", action)
 	fmt.Println(report)
+
+	return report
+}
+
+func (st *State) BuildResourceReport(emails []string, action string) Report {
+
+	known, err := st.DB.GetClientResourceList(emails)
+
+	if err != nil {
+		log.Println("failed to get from db ,  ", err)
+	}
+	action_ := ""
+
+	if action == "1" {
+		action_ = "open"
+	} else if action == "0" {
+		action_ = "click"
+	} else {
+		action_ = "unkown"
+	}
+
+	now := time.Now()
+
+	sub := fmt.Sprint("Resource Interest  ", action_, " ", now.Month(), " : ", now.Hour(), " ", now.Minute(), "\n")
+
+	report := st.ClientResourceToReport(sub, known)
 
 	return report
 }

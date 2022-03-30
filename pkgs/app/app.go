@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -54,6 +55,8 @@ func (ema *EmailNotifyApp) Init() error {
 	rou.Post("/turnsend", ema.TurnSendHandler)
 
 	rou.Post("/turntick", ema.TurnTickHandler)
+
+	rou.Post("/genspec", ema.GenSpecHandler)
 
 	ema.Router = rou
 
@@ -156,6 +159,108 @@ func (ema *EmailNotifyApp) TurnTickHandler(rw http.ResponseWriter, r *http.Reque
 		return
 	}
 
+}
+
+func (ema *EmailNotifyApp) GenSpecHandler(rw http.ResponseWriter, r *http.Request) {
+	data := &GenSpecRequest{}
+
+	if err := render.Bind(r, data); err != nil {
+
+		ema.WriteError(rw, r)
+		return
+
+	}
+	now := time.Now()
+	starttime := ema.GetDiff(data.Last)
+	// /notsclick := ema.DB.GetAllClick(starttime, now, data.MailingId)
+	notsopen := ema.DB.GetAllOpen(starttime, now, data.MailingId)
+	//open action
+	if data.Action == "0" {
+
+		//resource_ids :=
+		//esourcelist := make([])
+
+		report := ema.State.BuildSpecialReport(notsopen, "open")
+
+		msg := emailnotify.Message{
+			Subject: report.Subject,
+			Msg:     report.Txt,
+		}
+		err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
+
+		if err != nil {
+			log.Println("cannot send gen msg")
+		}
+
+		if data.GenResource {
+			email := ema.DB.GetEmails(notsopen)
+
+			report := ema.State.BuildResourceReport(email, "open")
+			msg := emailnotify.Message{
+				Subject: report.Subject,
+				Msg:     report.Txt,
+			}
+			err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
+			if err != nil {
+				log.Println("cannot send gen msg")
+			}
+		}
+		//	err := ema.NotifyEx.SendGenMsg(report)
+
+		// if err != nil {
+		// 	log.Println("error send special gen msg")
+		// }
+	} else if data.Action == "1" {
+		notsopen := ema.DB.GetAllOpen(starttime, now, data.MailingId)
+
+		report := ema.State.BuildSpecialReport(notsopen, "click")
+		msg := emailnotify.Message{
+			Subject: report.Subject,
+			Msg:     report.Txt,
+		}
+		err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
+		if err != nil {
+			log.Println("cannot send gen msg")
+		}
+		if data.GenResource {
+			emails := ema.DB.GetEmails(notsopen)
+
+			report := ema.State.BuildResourceReport(emails, data.Action)
+			msg := emailnotify.Message{
+				Subject: report.Subject,
+				Msg:     report.Txt,
+			}
+			err := ema.NotifyEx.SendGenMsg(msg, data.NotifyInterest)
+			if err != nil {
+				log.Println("cannot send gen msg")
+			}
+		}
+		//
+		// //		err := ema.NotifyEx.SendGenMsg(report)
+
+		// 		if err != nil {
+		// 			log.Println("failed to send msg")
+		// 			log.Println(err)
+		// 		}
+	} else {
+		ema.WriteError(rw, r)
+		return
+	}
+
+}
+
+func (ema *EmailNotifyApp) GetDiff(num int) time.Time {
+	now := time.Now()
+
+	fmt.Println("now:", now)
+
+	count := num
+	then := now.Add(time.Duration(-count) * time.Minute)
+	// if we had fix number of units to subtract, we can use following line instead fo above 2 lines. It does type convertion automatically.
+	// then := now.Add(-10 * time.Minute)
+	//fmt.Println("10 minutes ago:", then)
+
+	return then
 }
 func (ema *EmailNotifyApp) TurnSendHandler(rw http.ResponseWriter, r *http.Request) {
 
